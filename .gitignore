@@ -1,0 +1,26 @@
+# Visual Studio
+.vs/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+
+# CMake build folders
+out/
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
+# CMake user presets
+CMakeUserPresets.json
+
+# Windows build artifacts
+*.obj
+*.pdb
+*.exe
+*.ilk
+*.log
+*.tlog
+
+# Misc
+Thumbs.db
