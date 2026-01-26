@@ -7,8 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Include directories
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# Main executable
-add_executable(HighPerfServer src/main.cpp)
+# Add executables
+add_executable(HighPerfServer src/main.cpp src/ThreadPool.cpp)
 
 # Link winsock2 on Windows
 if(WIN32)
@@ -24,12 +24,19 @@ FetchContent_Declare(googletest
 FetchContent_MakeAvailable(googletest)
 
 # Unit tests
-add_executable(SocketWrapperTest test/SocketWrapperTest.cpp)
-target_link_libraries(SocketWrapperTest gtest gtest_main)
+# Define test targets with a reusable function
+function(add_test_target test_name test_sources extra_sources)
+    add_executable(${test_name} ${test_sources} ${extra_sources})
+    target_link_libraries(${test_name} gtest gtest_main)
+    
+    # Link winsock2 on Windows for all tests
+    if(WIN32)
+        target_link_libraries(${test_name} ws2_32)
+    endif()
+    
+    add_test(NAME ${test_name} COMMAND ${test_name})
+endfunction()
 
-# Link winsock2 on Windows for tests
-if(WIN32)
-    target_link_libraries(SocketWrapperTest ws2_32)
-endif()
-
-add_test(NAME SocketWrapperTest COMMAND SocketWrapperTest)
+# Register test targets
+add_test_target(SocketWrapperTest "test/SocketWrapperTest.cpp" "")
+add_test_target(ThreadPoolTest "test/ThreadPoolTest.cpp" "src/ThreadPool.cpp")
