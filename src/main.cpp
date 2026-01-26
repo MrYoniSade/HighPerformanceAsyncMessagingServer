@@ -1,6 +1,7 @@
 #include <iostream>
 #include "SocketWrapper.h"
 #include "ThreadPool.h"
+#include "LockFreeQueue.h"
 #include <vector>
 
 int main() {
@@ -51,6 +52,34 @@ int main() {
         // Graceful shutdown
         pool.shutdown();
         std::cout << "ThreadPool shutdown complete" << std::endl;
+    }
+
+    // Demo Lock-Free Queue
+    std::cout << "\n--- Lock-Free Queue Demo ---" << std::endl;
+    {
+        core::LockFreeQueue<int, 64> queue;
+        std::cout << "Created LockFreeQueue with capacity " << queue.capacity() << std::endl;
+
+        // Enqueue values
+        std::cout << "Enqueuing 16 values..." << std::endl;
+        for (int i = 0; i < 16; ++i) {
+            if (queue.try_enqueue(i * 10)) {
+                std::cout << "  Enqueued: " << i * 10 << std::endl;
+            } else {
+                std::cout << "  Failed to enqueue: " << i * 10 << " (queue full)" << std::endl;
+            }
+        }
+
+        std::cout << "\nApproximate queue size: " << queue.approximate_size() << std::endl;
+
+        // Dequeue values
+        std::cout << "Dequeuing values..." << std::endl;
+        int value;
+        while (queue.try_dequeue(value)) {
+            std::cout << "  Dequeued: " << value << std::endl;
+        }
+
+        std::cout << "Queue is empty: " << (queue.is_empty() ? "true" : "false") << std::endl;
     }
     
     return 0;

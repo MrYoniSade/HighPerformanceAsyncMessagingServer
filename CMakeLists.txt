@@ -40,3 +40,7 @@ endfunction()
 # Register test targets
 add_test_target(SocketWrapperTest "test/SocketWrapperTest.cpp" "")
 add_test_target(ThreadPoolTest "test/ThreadPoolTest.cpp" "src/ThreadPool.cpp")
+add_test_target(QueueTest "test/QueueTest.cpp" "")
+
+# Benchmark executable
+add_executable(QueueBenchmark src/QueueBenchmark.cpp)
