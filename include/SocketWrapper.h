@@ -20,8 +20,10 @@ namespace net {
 using socket_t = ::socket_t;
 constexpr auto INVALID_SOCKET_VALUE = ::INVALID_SOCKET_VALUE;
 
-class SocketWrapper {
+class SocketWrapper final {
 public:
+
+	// Constructor
     explicit SocketWrapper(socket_t socket = INVALID_SOCKET_VALUE) noexcept
         : m_socket(socket) {}
 

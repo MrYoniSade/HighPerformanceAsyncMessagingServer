@@ -2,7 +2,7 @@
 #include "SocketWrapper.h"
 
 int main() {
-    
+ 
     // Demo RAII Socket Wrapper
     {
         net::SocketWrapper validSock(static_cast<net::socket_t>(42));
