@@ -6,7 +6,11 @@
 #include "LogGuard.h"
 #include "ResourcePool.h"
 #include "RuleOfFiveDemo.h"
+#include "AsyncServer.h"
+#include "NetworkBuffer.h"
 #include <vector>
+#include <thread>
+#include <chrono>
 
 int main() {
  
@@ -153,6 +157,37 @@ int main() {
         
         std::cout << "Total instances created: " << core::RuleOfFiveDemo::total_instances() << std::endl;
     } // All objects destroyed, destructors called
+
+    // Demo Async Networking
+    std::cout << "\n--- Async Networking Demo ---" << std::endl;
+    {
+        core::net::NetworkBuffer buffer(256);
+        std::cout << "Created NetworkBuffer with capacity: " << buffer.size() << " bytes" << std::endl;
+        
+        // Write data
+        buffer.write_byte(0xFF);
+        buffer.write_uint16(0x1234);
+        buffer.write_uint32(0x12345678);
+        
+        std::cout << "Written " << buffer.write_pos() << " bytes" << std::endl;
+        std::cout << "Available to read: " << buffer.available_read() << " bytes" << std::endl;
+        
+        // Reset and read
+        buffer.reset_read();
+        uint8_t byte_val;
+        uint16_t word_val;
+        uint32_t dword_val;
+        
+        buffer.read_byte(byte_val);
+        buffer.read_uint16(word_val);
+        buffer.read_uint32(dword_val);
+        
+        std::cout << "Read byte: 0x" << std::hex << (int)byte_val << std::endl;
+        std::cout << "Read word: 0x" << word_val << std::endl;
+        std::cout << "Read dword: 0x" << dword_val << std::dec << std::endl;
+    }
+
+    std::cout << "\n=== All Demos Complete ===" << std::endl;
     
     return 0;
 }
