@@ -41,7 +41,9 @@ endfunction()
 add_test_target(SocketWrapperTest "test/SocketWrapperTest.cpp" "")
 add_test_target(ThreadPoolTest "test/ThreadPoolTest.cpp" "src/ThreadPool.cpp")
 add_test_target(QueueTest "test/QueueTest.cpp" "")
-add_test_target(RAIITest "test/RAIITest.cpp" "")
+add_test_target(BufferWrapperTest "test/BufferWrapperTest.cpp" "")
+add_test_target(LogGuardTest "test/LogGuardTest.cpp" "")
+add_test_target(ResourcePoolTest "test/ResourcePoolTest.cpp" "")
 
 # Benchmark executable
 add_executable(QueueBenchmark src/QueueBenchmark.cpp)
