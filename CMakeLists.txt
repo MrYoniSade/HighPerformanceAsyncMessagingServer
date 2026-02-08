@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Add executables
-add_executable(HighPerfServer src/main.cpp src/ThreadPool.cpp src/AsyncSocket.cpp src/ConnectionHandler.cpp src/AsyncServer.cpp src/ConnectionManager.cpp)
+add_executable(HighPerfServer src/main.cpp src/ThreadPool.cpp src/AsyncSocket.cpp src/ConnectionHandler.cpp src/AsyncServer.cpp src/ConnectionManager.cpp src/BinaryProtocol.cpp src/MessageSerializer.cpp src/BitPackUtils.cpp src/HandlerRegistry.cpp)
 
 # Link winsock2 on Windows
 if(WIN32)
@@ -45,6 +45,7 @@ add_test_target(BufferWrapperTest "test/BufferWrapperTest.cpp" "")
 add_test_target(LogGuardTest "test/LogGuardTest.cpp" "")
 add_test_target(ResourcePoolTest "test/ResourcePoolTest.cpp" "")
 add_test_target(AsyncNetworkingTest "test/AsyncNetworkingTest.cpp" "src/AsyncSocket.cpp;src/ConnectionHandler.cpp;src/ConnectionManager.cpp")
+add_test_target(ProtocolTest "test/ProtocolTest.cpp" "src/BinaryProtocol.cpp;src/MessageSerializer.cpp;src/BitPackUtils.cpp;src/HandlerRegistry.cpp")
 
 # Benchmark executable
 add_executable(QueueBenchmark src/QueueBenchmark.cpp)

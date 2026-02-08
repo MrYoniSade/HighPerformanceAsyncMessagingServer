@@ -8,9 +8,16 @@
 #include "RuleOfFiveDemo.h"
 #include "AsyncServer.h"
 #include "NetworkBuffer.h"
+#include "BinaryProtocol.h"
+#include "MessageSerializer.h"
+#include "BitPackUtils.h"
+#include "EndianUtils.h"
+#include "HandlerRegistry.h"
+#include "ProtocolMessages.h"
 #include <vector>
 #include <thread>
 #include <chrono>
+#include <iomanip>
 
 int main() {
  
@@ -185,6 +192,138 @@ int main() {
         std::cout << "Read byte: 0x" << std::hex << (int)byte_val << std::endl;
         std::cout << "Read word: 0x" << word_val << std::endl;
         std::cout << "Read dword: 0x" << dword_val << std::dec << std::endl;
+    }
+
+    // Demo Binary Protocol
+    std::cout << "\n--- Binary Protocol Demo ---" << std::endl;
+    {
+        using namespace core::protocol;
+        using namespace core::protocol::messages;
+
+        std::cout << "Protocol Magic: 0x" << std::hex << (int)PROTOCOL_MAGIC << std::dec << std::endl;
+        std::cout << "Protocol Version: " << (int)PROTOCOL_VERSION << std::endl;
+
+        // Create a Ping message
+        PingMessage ping;
+        ping.sequence_id = 12345;
+        ping.timestamp = std::chrono::system_clock::now().time_since_epoch().count();
+
+        std::cout << "Created Ping message (seq=" << ping.sequence_id << ")" << std::endl;
+
+        // Serialize the frame
+        core::net::NetworkBuffer serialized_buffer(256);
+        FrameHeader header;
+        header.magic = PROTOCOL_MAGIC;
+        header.version = PROTOCOL_VERSION;
+        header.message_type = static_cast<uint8_t>(MessageType::PING);
+        header.flags = 0;
+        header.payload_length = sizeof(PingMessage);
+        header.reserved = 0;
+
+        if (MessageSerializer::serialize_frame(header, reinterpret_cast<const uint8_t*>(&ping),
+                                              sizeof(PingMessage), serialized_buffer)) {
+            std::cout << "Serialized frame size: " << serialized_buffer.write_pos() << " bytes" << std::endl;
+
+            // Deserialize the frame
+            FrameHeader decoded_header;
+            std::vector<uint8_t> payload;
+            size_t consumed = MessageSerializer::deserialize_frame(
+                serialized_buffer.data(),
+                serialized_buffer.write_pos(),
+                decoded_header,
+                payload
+            );
+
+            if (consumed > 0) {
+                std::cout << "Deserialized frame successfully" << std::endl;
+                std::cout << "  Message type: " << std::hex << (int)decoded_header.message_type << std::dec << std::endl;
+                std::cout << "  Payload length: " << decoded_header.payload_length << std::endl;
+            }
+        }
+    }
+
+    // Demo Message Routing
+    std::cout << "\n--- Message Routing Demo ---" << std::endl;
+    {
+        using namespace core::protocol;
+        using namespace core::protocol::messages;
+
+        HandlerRegistry registry;
+        std::cout << "Created Handler Registry" << std::endl;
+
+        // Register Ping handler
+        registry.register_handler(std::make_unique<PingHandler>([](const PingMessage& msg) {
+            std::cout << "  [Handler] Received Ping: seq=" << msg.sequence_id << std::endl;
+            return true;
+        }));
+
+        // Register Pong handler
+        registry.register_handler(std::make_unique<PongHandler>([](const PongMessage& msg) {
+            std::cout << "  [Handler] Received Pong: seq=" << msg.sequence_id << std::endl;
+            return true;
+        }));
+
+        std::cout << "Registered 2 handlers, total: " << registry.handler_count() << std::endl;
+
+        // Create and dispatch a Ping message
+        PingMessage ping;
+        ping.sequence_id = 999;
+        ping.timestamp = 0;
+
+        std::cout << "Dispatching Ping message..." << std::endl;
+        registry.dispatch(MessageType::PING, reinterpret_cast<const uint8_t*>(&ping),
+                         sizeof(PingMessage));
+
+        // Try unhandled message type
+        std::cout << "Attempting to dispatch unhandled message type..." << std::endl;
+        registry.dispatch(MessageType::ECHO, nullptr, 0);
+    }
+
+    // Demo Bit Packing
+    std::cout << "\n--- Bit Packing Demo ---" << std::endl;
+    {
+        using namespace core::protocol;
+
+        uint8_t buffer[16] = {0};
+
+        // Pack various values
+        size_t offset = 0;
+        offset = BitPackUtils::pack_bool(buffer, offset, true);
+        offset = BitPackUtils::pack_bits(buffer, offset, 0b1010, 4);
+        offset = BitPackUtils::pack_uint8(buffer, offset, 0xFF);
+        offset = BitPackUtils::pack_uint16(buffer, offset, 0x1234);
+
+        std::cout << "Packed 1 bool + 4 bits + 1 uint8 + 1 uint16" << std::endl;
+        std::cout << "Total bits packed: " << offset << std::endl;
+
+        // Unpack values
+        offset = 0;
+        bool bool_val = BitPackUtils::unpack_bool(buffer, offset);
+        offset += 1;
+        uint32_t bits_val = BitPackUtils::unpack_bits(buffer, offset, 4);
+        offset += 4;
+        uint8_t byte_val = BitPackUtils::unpack_uint8(buffer, offset);
+        offset += 8;
+        uint16_t word_val = BitPackUtils::unpack_uint16(buffer, offset);
+
+        std::cout << "Unpacked values: bool=" << bool_val << ", bits=0x" << std::hex << bits_val
+                  << ", byte=0x" << (int)byte_val << ", word=0x" << word_val << std::dec << std::endl;
+    }
+
+    // Demo Endianness
+    std::cout << "\n--- Endianness Demo ---" << std::endl;
+    {
+        using namespace core::protocol;
+
+        std::cout << "System is " << (EndianUtils::IS_LITTLE_ENDIAN ? "LITTLE" : "BIG") << " endian" << std::endl;
+
+        uint16_t value16 = 0x1234;
+        uint16_t swapped16 = EndianUtils::swap_uint16(value16);
+        std::cout << "0x" << std::hex << value16 << " swapped = 0x" << swapped16 << std::dec << std::endl;
+
+        uint32_t value32 = 0x12345678;
+        uint32_t swapped32 = EndianUtils::swap_uint32(value32);
+        std::cout << "0x" << std::hex << value32 << " swapped = 0x" << swapped32 << std::dec << std::endl;
     }
 
     std::cout << "\n=== All Demos Complete ===" << std::endl;
