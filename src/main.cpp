@@ -2,6 +2,10 @@
 #include "SocketWrapper.h"
 #include "ThreadPool.h"
 #include "LockFreeQueue.h"
+#include "BufferWrapper.h"
+#include "LogGuard.h"
+#include "ResourcePool.h"
+#include "RuleOfFiveDemo.h"
 #include <vector>
 
 int main() {
@@ -81,6 +85,74 @@ int main() {
 
         std::cout << "Queue is empty: " << (queue.is_empty() ? "true" : "false") << std::endl;
     }
+
+    // Demo BufferWrapper - RAII for buffers
+    std::cout << "\n--- BufferWrapper Demo (RAII) ---" << std::endl;
+    {
+        core::BufferWrapper<uint8_t> buffer(256);
+        std::cout << "Created buffer with size: " << buffer.size() << " bytes" << std::endl;
+        
+        buffer[0] = 0xFF;
+        buffer[255] = 0xAA;
+        std::cout << "Set buffer[0] = 0x" << std::hex << (int)buffer[0] << std::endl;
+        std::cout << "Set buffer[255] = 0x" << (int)buffer[255] << std::dec << std::endl;
+        
+        // Move semantics
+        core::BufferWrapper<uint8_t> buffer2 = std::move(buffer);
+        std::cout << "After move, buffer2 is valid: " << (buffer2.is_valid() ? "true" : "false") << std::endl;
+    } // Both buffers cleaned up automatically
+
+    // Demo LogGuard - RAII for file handles
+    std::cout << "\n--- LogGuard Demo (RAII) ---" << std::endl;
+    {
+        core::LogGuard log("demo_session.log");
+        std::cout << "Created log file: " << log.filename() << std::endl;
+        
+        log.log("Session started");
+        log.log("Processing data");
+        log.log("Operation complete");
+        
+        std::cout << "Log file closed: " << (log.is_open() ? "false (still open)" : "true") << std::endl;
+    } // Log file automatically closed
+
+    // Demo ResourcePool - Smart Pointer patterns
+    std::cout << "\n--- ResourcePool Demo (shared_ptr/weak_ptr) ---" << std::endl;
+    {
+        struct SimpleResource {
+            int id = 0;
+        };
+        
+        core::ResourcePool<SimpleResource> pool(3);
+        std::cout << "Created ResourcePool with " << pool.total_resources() << " resources" << std::endl;
+        
+        {
+            auto res1 = pool.acquire();
+            auto res2 = pool.acquire();
+            
+            std::cout << "Active resources: " << pool.active_resources() << std::endl;
+            std::cout << "Available resources: " << pool.available_resources() << std::endl;
+        }
+        
+        std::cout << "After releasing: " << pool.available_resources() << " available" << std::endl;
+    }
+
+    // Demo Rule of Five
+    std::cout << "\n--- Rule of Five Demo ---" << std::endl;
+    {
+        std::cout << "Creating object 1..." << std::endl;
+        core::RuleOfFiveDemo obj1("Original");
+        
+        std::cout << "Copy constructing object 2..." << std::endl;
+        core::RuleOfFiveDemo obj2 = obj1;
+        
+        std::cout << "Move constructing object 3..." << std::endl;
+        core::RuleOfFiveDemo obj3 = std::move(obj1);
+        
+        std::cout << "Copy assigning to object 2..." << std::endl;
+        obj2 = obj3;
+        
+        std::cout << "Total instances created: " << core::RuleOfFiveDemo::total_instances() << std::endl;
+    } // All objects destroyed, destructors called
     
     return 0;
 }
